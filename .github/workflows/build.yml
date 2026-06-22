@@ -9,17 +9,14 @@ on:
 jobs:
   build:
     name: Swift ${{ matrix.swift }} on ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        swift: ["6.2", "6.3"]
     runs-on: ${{ matrix.os }}
-    steps:
-      - uses: swift-actions/setup-swift@v3
-        with:
-          swift-version: ${{ matrix.swift }}
-      - uses: actions/checkout@v6
-      - name: Build
-        run: swift build
-      - name: Run tests
-        run: swift test
+  strategy:
+    matrix:
+      os: [ubuntu-latest, macos-latest]
+      swift: ['6.2', '6.3']
+  steps:
+  - uses: SwiftyLab/setup-swift@latest
+    with:
+      swift-version: ${{ matrix.swift }}
+  - name: Get swift version
+    run: swift --version

@@ -10,13 +10,13 @@ jobs:
   build:
     name: Swift ${{ matrix.swift }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-  strategy:
-    matrix:
-      os: [ubuntu-latest, macos-latest]
-      swift: ['6.2', '6.3']
-  steps:
-  - uses: SwiftyLab/setup-swift@latest
-    with:
-      swift-version: ${{ matrix.swift }}
-  - name: Get swift version
-    run: swift --version
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        swift: ['6.2', '6.3']
+    steps:
+    - uses: SwiftyLab/setup-swift@latest
+      with:
+        swift-version: ${{ matrix.swift }}
+    - name: Get swift version
+      run: swift --version

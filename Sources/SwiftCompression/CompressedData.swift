@@ -93,6 +93,9 @@ public extension CompressedData {
 
         let compresed = _data.subdata(in: capacity ..< _data.count)
 
-        return try compresed.decompressed(using: algorithm, pageSize: pageSize, progressReport: progressReport)
+        return try compresed.decompressed(using: algorithm,
+                                          pageSize: pageSize,
+                                          uncompressedSize: .init(payload.originalSize),
+                                          progressReport: progressReport)
     }
 }

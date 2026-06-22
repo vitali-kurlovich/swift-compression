@@ -3,7 +3,7 @@
 //
 
 import Foundation
-import SwiftCompression
+@testable import SwiftCompression
 import Testing
 
 struct DataTest {
@@ -21,5 +21,20 @@ struct DataTest {
         let uncompress = try compressed.decompressed(using: configuration.algorithm, pageSize: configuration.pageSize)
 
         #expect(uncompress == data)
+    }
+
+    @Test(arguments: CompressedData.Configuration.all)
+    func decompressOld(_ configuration: CompressedData.Configuration) throws {
+        let data = MocData.long
+
+        if configuration.algorithm != .none {
+            let compression_algorithm = try #require(configuration.algorithm.compression_algorithm)
+
+            let compressed = try data.compressWithBuffer(algorithm: compression_algorithm)
+
+            let uncompress = try compressed.decompressWithBuffer(algorithm: compression_algorithm, uncompressedSize: data.count)
+
+            #expect(uncompress == data)
+        }
     }
 }

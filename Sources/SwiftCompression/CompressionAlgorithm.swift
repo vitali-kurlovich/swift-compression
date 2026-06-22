@@ -14,6 +14,7 @@ public enum CompressionAlgorithm: UInt8, Hashable, Codable, CaseIterable, Sendab
 }
 
 extension CompressionAlgorithm {
+    @available(macOS 10.15, iOS 13, watchOS 6, tvOS 13, *)
     var algorithm: Algorithm? {
         switch self {
         case .none:
@@ -26,6 +27,23 @@ extension CompressionAlgorithm {
             return .zlib
         case .brotli:
             return .brotli
+        }
+    }
+}
+
+extension CompressionAlgorithm {
+    var compression_algorithm: compression_algorithm? {
+        switch self {
+        case .none:
+            return nil
+        case .lz4:
+            return COMPRESSION_LZ4
+        case .lzma:
+            return COMPRESSION_LZMA
+        case .zlib:
+            return COMPRESSION_ZLIB
+        case .brotli:
+            return COMPRESSION_BROTLI
         }
     }
 }

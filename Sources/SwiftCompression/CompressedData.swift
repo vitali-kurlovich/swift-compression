@@ -41,7 +41,6 @@ public extension CompressedData {
         _data = data
     }
 
-    @available(macOS 10.14.4, iOS 12.2, watchOS 5.2, tvOS 12.2, *)
     var payload: CompressedDataPayload {
         var size: UInt32 = 0
         var rawValue: UInt8 = CompressionAlgorithm.none.rawValue
@@ -81,7 +80,6 @@ extension CompressedData: Codable {
 }
 
 public extension CompressedData {
-    @available(macOS 10.14.4, iOS 12.2, watchOS 5.2, tvOS 12.2, *)
     func decompress(pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) throws -> Data {
         let payload = self.payload
 
@@ -97,7 +95,6 @@ public extension CompressedData {
 
         return try compresed.decompressed(using: algorithm,
                                           pageSize: pageSize,
-                                          uncompressedSize: .init(payload.originalSize),
                                           progressReport: progressReport)
     }
 }

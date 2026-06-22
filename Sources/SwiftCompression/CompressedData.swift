@@ -42,26 +42,29 @@ public extension CompressedData {
     }
 
     var payload: CompressedDataPayload {
-        var size: UInt32 = 0
         var rawValue: UInt8 = CompressionAlgorithm.none.rawValue
 
-        assert(CompressionAlgorithm.none.rawValue == 0)
+        var size: UInt32 = 0
 
-        let rawSpan = _data.bytes.extracting(first: MemoryLayout.size(ofValue: rawValue))
+        _data.withUnsafeBytes { pointer in
+            rawValue = pointer.load(as: type(of: rawValue))
 
-        rawValue = rawSpan.unsafeLoad(as: type(of: rawValue))
-
-        if rawValue == CompressionAlgorithm.none.rawValue {
-            size = .init(_data.count - MemoryLayout.size(ofValue: rawValue))
-
-            return CompressedDataPayload(originalSize: size, compressedSize: size, algorithm: .init(rawValue: rawValue)!)
+            if rawValue == CompressionAlgorithm.none.rawValue {
+                size = .init(_data.count - MemoryLayout.size(ofValue: rawValue))
+            } else {
+                size = .init(bigEndian: pointer.loadUnaligned(fromByteOffset: MemoryLayout.size(ofValue: rawValue), as: type(of: size)))
+            }
         }
 
-        let sizeSpan = _data.bytes.extracting(MemoryLayout.size(ofValue: rawValue) ..< MemoryLayout.size(ofValue: rawValue) + MemoryLayout.size(ofValue: size))
+        let algorithm = CompressionAlgorithm(rawValue: rawValue)!
 
-        size = .init(bigEndian: sizeSpan.unsafeLoadUnaligned(as: type(of: size)))
+        let compressedSize: UInt32
 
-        let compressedSize: UInt32 = .init(_data.count - MemoryLayout.size(ofValue: rawValue) - MemoryLayout.size(ofValue: size))
+        if algorithm == .none {
+            compressedSize = .init(_data.count - MemoryLayout.size(ofValue: rawValue))
+        } else {
+            compressedSize = .init(_data.count - MemoryLayout.size(ofValue: rawValue) - MemoryLayout.size(ofValue: size))
+        }
 
         return CompressedDataPayload(originalSize: size, compressedSize: compressedSize, algorithm: .init(rawValue: rawValue)!)
     }

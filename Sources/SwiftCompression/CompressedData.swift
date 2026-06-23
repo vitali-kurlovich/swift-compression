@@ -22,7 +22,9 @@ public extension CompressedData {
 public struct CompressedData: Hashable, Sendable {
     let _data: Data
 
-    public init(data: Data, configuration: Configuration = .init(), progressReport: @escaping (Int, Int) -> Void = { _, _ in }) throws {
+    public init(data: Data, configuration: Configuration = .init(), progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws {
+        assert(data.isEmpty == false)
+
         let algorithm: CompressionAlgorithm = configuration.minSizeForSkipCompression >= data.count ? .none : configuration.algorithm
         let pageSize = configuration.pageSize
 
@@ -30,7 +32,11 @@ public struct CompressedData: Hashable, Sendable {
 
         var result = payload.data()
 
-        try result.append(data.compressed(using: algorithm, pageSize: pageSize, progressReport: progressReport))
+        let compressed = try await data.compressed(using: algorithm, pageSize: pageSize, progressReport: progressReport)
+
+        assert(compressed.isEmpty == false)
+
+        result.append(compressed)
 
         _data = result
     }
@@ -83,7 +89,7 @@ extension CompressedData: Codable {
 }
 
 public extension CompressedData {
-    func decompress(pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) throws -> Data {
+    func decompress(pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws -> Data {
         let payload = self.payload
 
         let algorithm = payload.algorithm
@@ -94,10 +100,13 @@ public extension CompressedData {
             capacity += MemoryLayout.size(ofValue: payload.originalSize)
         }
 
-        let compresed = _data.subdata(in: capacity ..< _data.count)
+        let startIndex = _data.index(_data.startIndex, offsetBy: capacity)
+        let endIndex = _data.endIndex
 
-        return try compresed.decompressed(using: algorithm,
-                                          pageSize: pageSize,
-                                          progressReport: progressReport)
+        let compresed = _data.subdata(in: startIndex ..< endIndex)
+
+        return try await compresed.decompressed(using: algorithm,
+                                                pageSize: pageSize,
+                                                progressReport: progressReport)
     }
 }

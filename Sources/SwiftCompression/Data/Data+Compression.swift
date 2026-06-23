@@ -6,7 +6,9 @@ import Compression
 import Foundation
 
 public extension Data {
-    func compressed(using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: (Int, Int) -> Void = { _, _ in }) throws -> Self {
+    func compressed(using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: (Int, Int) -> Void = { _, _ in }) async throws -> Self {
+        assert(isEmpty == false)
+
         guard let algorithm = algorithm.algorithm else {
             progressReport(count, count)
 
@@ -37,17 +39,21 @@ public extension Data {
 
             try outputFilter.write(subdata)
 
-            progressReport(count, index)
-
             if rangeLength == 0 {
                 break
             }
+
+            progressReport(count, index)
         }
+
+        try outputFilter.finalize()
 
         return compressedData
     }
 
-    func decompressed(using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) throws -> Self {
+    func decompressed(using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws -> Self {
+        assert(isEmpty == false)
+
         guard let algorithm = algorithm.algorithm else {
             progressReport(count, count)
             return self

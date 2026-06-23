@@ -16,6 +16,16 @@ enum MocData {
     static var long: Data {
         MocStrings.long.data(using: .utf8)!
     }
+
+    static var array: [Data] {
+        MocStrings.strings.map {
+            $0.data(using: .utf8)!
+        }
+    }
+
+    static var joinedArray: Data {
+        MocStrings.strings.joined().data(using: .utf8)!
+    }
 }
 
 enum MocMediumCompressedData {

@@ -6,18 +6,18 @@ import Compression
 import Foundation
 
 public extension FileHandle {
-    func compress(algorithm: CompressionAlgorithm, pageSize: Int = 0) async throws -> Data {
+    func compress(algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws -> Data {
         let fileHandle: FileHandle = self
         guard let algorithm = algorithm.algorithm else {
-            return try await _compress(pageSize: pageSize)
+            return try await _compress(pageSize: pageSize, progressReport: progressReport)
         }
 
-        return try await _compress(algorithm: algorithm, pageSize: pageSize)
+        return try await _compress(algorithm: algorithm, pageSize: pageSize, progressReport: progressReport)
     }
 }
 
 extension FileHandle {
-    func _compress(algorithm: Algorithm, pageSize: Int) async throws -> Data {
+    func _compress(algorithm: Algorithm, pageSize: Int, progressReport: @escaping (Int, Int) -> Void) async throws -> Data {
         let fileHandle: FileHandle = self
 
         let fileSize = try Int(fileHandle.seekToEnd())
@@ -39,6 +39,8 @@ extension FileHandle {
         var index = 0
         let bufferSize = fileSize
 
+        progressReport(bufferSize, index)
+
         while true {
             let rangeLength = Swift.min(pageSize, bufferSize - index)
 
@@ -54,14 +56,17 @@ extension FileHandle {
             try outputFilter.write(data)
 
             index += rangeLength
+            progressReport(bufferSize, index)
         }
 
         try outputFilter.finalize()
 
+        progressReport(bufferSize, index)
+
         return compressedData
     }
 
-    func _compress(pageSize: Int) async throws -> Data {
+    func _compress(pageSize: Int, progressReport: @escaping (Int, Int) -> Void) async throws -> Data {
         let fileHandle: FileHandle = self
 
         let fileSize = try Int(fileHandle.seekToEnd())
@@ -85,10 +90,14 @@ extension FileHandle {
                 break
             }
 
+            progressReport(bufferSize, index)
+
             index += rangeLength
 
             compressedData.append(data)
         }
+
+        progressReport(bufferSize, index)
 
         return compressedData
     }

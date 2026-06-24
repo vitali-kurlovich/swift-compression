@@ -5,7 +5,11 @@
 import Compression
 import Foundation
 
-struct Compressor {
+public struct Compressor {
+    public init() {}
+}
+
+public extension Compressor {
     func compress(
         read readFunc: @escaping (Range<Int>) throws -> Data?,
         writingTo writeFunc: @escaping (Data) throws -> Void,

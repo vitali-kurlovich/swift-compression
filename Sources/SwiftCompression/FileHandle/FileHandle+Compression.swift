@@ -2,7 +2,6 @@
 //  Created by Kurlovich Vitali on 6/23/26.
 //
 
-import Compression
 import Foundation
 
 public extension FileHandle {

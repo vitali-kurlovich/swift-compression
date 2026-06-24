@@ -111,6 +111,4 @@ struct FileHandleTest {
 
         #expect(uncompressFile == data)
     }
-
-    
 }

@@ -6,53 +6,35 @@ import Compression
 import Foundation
 
 public extension Data {
-    func compress(using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: (Int, Int) -> Void = { _, _ in }) async throws -> Self {
-        assert(isEmpty == false)
-
-        guard let algorithm = algorithm.algorithm else {
-            progressReport(count, count)
-
+    func compress(using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport : @escaping (Int, Int) -> Void = { _, _ in }) async throws -> Self {
+        if isEmpty {
             return self
         }
 
-        let pageSize = pageSize == 0 ? count : pageSize
+        let compressor = Compressor()
+
+        let bufferSize = count
+
+        let pageSize = pageSize == 0 ? bufferSize : pageSize
 
         var compressedData = Data()
 
-        let outputFilter = try OutputFilter(.compress,
-                                            using: algorithm)
-        {
-            (data: Data?) in
-            if let data = data {
-                compressedData.append(data)
-            }
-        }
-
-        var index = 0
-        let bufferSize = count
-
-        while true {
-            let rangeLength = Swift.min(pageSize, bufferSize - index)
-
-            let subdata = self.subdata(in: index ..< index + rangeLength)
-            index += rangeLength
-
-            try outputFilter.write(subdata)
-
-            if rangeLength == 0 {
-                break
-            }
-
-            progressReport(count, index)
-        }
-
-        try outputFilter.finalize()
+        try await compressor.compress(read: { range in
+            self.subdata(in: range)
+        }, writingTo: { data in
+            compressedData.append(data)
+        }, algorithm: algorithm, pageSize: pageSize,
+                                      bufferSize: bufferSize,
+                                      progressReport: progressReport)
 
         return compressedData
     }
 
     func decompress(using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws -> Self {
-        assert(isEmpty == false)
+        if isEmpty {
+            progressReport(0, 0)
+            return self
+        }
 
         guard let algorithm = algorithm.algorithm else {
             progressReport(count, count)

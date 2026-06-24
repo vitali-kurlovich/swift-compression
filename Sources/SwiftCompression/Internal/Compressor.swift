@@ -9,7 +9,7 @@ struct Compressor {
     func compress(
         read readFunc: @escaping (Range<Int>) throws -> Data?,
         writingTo writeFunc: @escaping (Data) throws -> Void,
-        algorithm: CompressionAlgorithm,
+        using algorithm: CompressionAlgorithm,
         pageSize: Int,
         bufferSize: Int,
         progressReport: @escaping (Int, Int) -> Void = { _, _ in }

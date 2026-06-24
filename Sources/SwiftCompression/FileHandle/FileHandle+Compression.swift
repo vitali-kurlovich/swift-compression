@@ -6,7 +6,7 @@ import Compression
 import Foundation
 
 public extension FileHandle {
-    func compress(algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws -> Data {
+    func compress(using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws -> Data {
         let fileHandle: FileHandle = self
 
         let fileSize = try Int(fileHandle.seekToEnd())
@@ -17,7 +17,7 @@ public extension FileHandle {
         }
 
         if algorithm == .none {
-            return try fileHandle.read(upToCount: fileSize) ?? Data()
+            return try fileHandle.read(upToCount: fileSize)!
         }
 
         let compressor = Compressor()
@@ -32,12 +32,40 @@ public extension FileHandle {
             try fileHandle.read(upToCount: range.count)
         }, writingTo: { data in
             compressedData.append(data)
-        }, algorithm: algorithm,
+        },
+        using: algorithm,
         pageSize: pageSize,
         bufferSize: bufferSize,
         progressReport: progressReport)
 
         return compressedData
+    }
+
+    func compress(writeTo output: FileHandle, using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws {
+        let fileHandle: FileHandle = self
+
+        let fileSize = try Int(fileHandle.seekToEnd())
+        try fileHandle.seek(toOffset: 0)
+
+        if fileSize == 0 {
+            return
+        }
+
+        let compressor = Compressor()
+
+        let bufferSize = fileSize
+
+        let pageSize = pageSize == 0 ? bufferSize : pageSize
+
+        try await compressor.compress(read: { range in
+            try fileHandle.read(upToCount: range.count)
+        }, writingTo: { data in
+            try output.write(contentsOf: data)
+        },
+        using: algorithm,
+        pageSize: pageSize,
+        bufferSize: bufferSize,
+        progressReport: progressReport)
     }
 }
 

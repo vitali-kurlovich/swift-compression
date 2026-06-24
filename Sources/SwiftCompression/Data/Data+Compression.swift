@@ -23,7 +23,8 @@ public extension Data {
             self.subdata(in: range)
         }, writingTo: { data in
             compressedData.append(data)
-        }, algorithm: algorithm, pageSize: pageSize,
+        },
+        using: algorithm, pageSize: pageSize,
         bufferSize: bufferSize,
         progressReport: progressReport)
 

@@ -52,10 +52,14 @@ public extension Data {
 }
 
 public extension Data {
-    func decompress(using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws -> Self {
-        if isEmpty || algorithm == .none {
+    func decompress(writingTo writeFunc: @escaping (Data) throws -> Void,
+                    using algorithm: CompressionAlgorithm,
+                    pageSize: Int = 0,
+                    progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws
+    {
+        if isEmpty {
             progressReport(count, count)
-            return self
+            return
         }
 
         let bufferSize = count
@@ -63,17 +67,46 @@ public extension Data {
 
         let decompressor = Decompressor()
 
-        var decompressedData = Data()
-
         try await decompressor.decompress(read: { range in
             self.subdata(in: range)
-        }, writingTo: { data in
-            decompressedData.append(data)
-        }, using: algorithm,
+        }, writingTo: writeFunc,
+        using: algorithm,
         pageSize: pageSize,
         bufferSize: bufferSize,
         progressReport: progressReport)
+    }
+}
+
+public extension Data {
+    func decompress(using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws -> Self {
+        if isEmpty || algorithm == .none {
+            progressReport(count, count)
+            return self
+        }
+
+        var decompressedData = Data()
+
+        try await decompress(writingTo: { data in
+                                 decompressedData.append(data)
+                             },
+                             using: algorithm,
+                             pageSize: pageSize,
+                             progressReport: progressReport)
 
         return decompressedData
+    }
+
+    func decompress(writeTo output: FileHandle, using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws {
+        if isEmpty {
+            progressReport(count, count)
+            return
+        }
+
+        try await decompress(writingTo: { data in
+                                 try output.write(contentsOf: data)
+                             },
+                             using: algorithm,
+                             pageSize: pageSize,
+                             progressReport: progressReport)
     }
 }

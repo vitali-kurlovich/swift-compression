@@ -54,12 +54,16 @@ struct FileHandleTest {
 
         let compressedFileURL = tempDir.appendingPathComponent(UUID().uuidString + ".zmoc")
 
+        let uncompressedFileURL = tempDir.appendingPathComponent(UUID().uuidString + ".umoc")
+
         FileManager.default.createFile(atPath: compressedFileURL.path(), contents: nil)
+        FileManager.default.createFile(atPath: uncompressedFileURL.path(), contents: nil)
 
         // 3. Clean up the file automatically when the test finishes
         defer {
             try? FileManager.default.removeItem(at: fileURL)
             try? FileManager.default.removeItem(at: compressedFileURL)
+            try? FileManager.default.removeItem(at: uncompressedFileURL)
         }
 
         // 4. Write mock data to the temporary file
@@ -81,41 +85,32 @@ struct FileHandleTest {
 
         #expect(compressed.isEmpty == data.isEmpty)
 
-        let uncompress = try await compressed.decompress(using: configuration.algorithm, pageSize: configuration.pageSize) { total, progress in
-            #expect(compressed.count == total)
+        let readHandler = try FileHandle(forReadingFrom: compressedFileURL)
 
+        let uncompress = try await readHandler.decompress(algorithm: configuration.algorithm, pageSize: configuration.pageSize) { total, progress in
+            #expect(compressed.count == total)
             #expect(progress <= total)
         }
 
-
         #expect(uncompress == data)
-    }
 
-    @Test(arguments: DataPresset.all)
-    func decompress(_ presset: DataPresset) async throws {
-        let data = presset.data
-        let configuration = presset.configuration
+        let writeUncompressedHandler = try FileHandle(forWritingTo: uncompressedFileURL)
 
-        // 1. Get the system temporary directory URL
-        let tempDir = FileManager.default.temporaryDirectory
-
-        // 2. Create a unique filename for isolation
-        let fileURL = tempDir.appendingPathComponent(UUID().uuidString + ".moc")
-
-        // 3. Clean up the file automatically when the test finishes
-        defer {
-            try? FileManager.default.removeItem(at: fileURL)
+        try await readHandler.decompress(writeTo: writeUncompressedHandler,
+                                         algorithm: configuration.algorithm,
+                                         pageSize: configuration.pageSize)
+        { total, progress in
+            #expect(compressed.count == total)
+            #expect(progress <= total)
         }
 
-        // 4. Write mock data to the temporary file
+        try readHandler.close()
+        try writeUncompressedHandler.close()
 
-        let compressed = try await data.compress(using: configuration.algorithm, pageSize: configuration.pageSize)
-        try compressed.write(to: fileURL, options: [.atomic])
+        let uncompressFile = try Data(contentsOf: uncompressedFileURL)
 
-        let handler = try FileHandle(forReadingFrom: fileURL)
-
-        let uncompress = try await handler.decompress(algorithm: configuration.algorithm, pageSize: configuration.pageSize)
-
-        #expect(uncompress == data)
+        #expect(uncompressFile == data)
     }
+
+    
 }

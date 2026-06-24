@@ -23,8 +23,6 @@ public struct CompressedData: Hashable, Sendable {
     let _data: Data
 
     public init(data: Data, configuration: Configuration = .init(), progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws {
-        assert(data.isEmpty == false)
-
         let algorithm: CompressionAlgorithm = configuration.minSizeForSkipCompression >= data.count ? .none : configuration.algorithm
         let pageSize = configuration.pageSize
 
@@ -33,8 +31,6 @@ public struct CompressedData: Hashable, Sendable {
         var result = payload.data()
 
         let compressed = try await data.compress(using: algorithm, pageSize: pageSize, progressReport: progressReport)
-
-        assert(compressed.isEmpty == false)
 
         result.append(compressed)
 

@@ -2,6 +2,7 @@
 //  Created by Kurlovich Vitali on 6/22/26.
 //
 
+import Foundation
 import SwiftCompression
 
 extension CompressedData.Configuration {

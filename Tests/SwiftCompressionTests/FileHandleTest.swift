@@ -34,4 +34,31 @@ struct FileHandleTest {
 
         #expect(uncompress == data)
     }
+    
+    @Test(arguments: CompressedData.Configuration.all)
+    func decompress(_ configuration: CompressedData.Configuration) async throws {
+        
+        // 1. Get the system temporary directory URL
+        let tempDir = FileManager.default.temporaryDirectory
+
+        // 2. Create a unique filename for isolation
+        let fileURL = tempDir.appendingPathComponent(UUID().uuidString + ".moc")
+
+        // 3. Clean up the file automatically when the test finishes
+        defer {
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+
+        // 4. Write mock data to the temporary file
+        let data = MocData.long
+        
+        let compressed = try await data.compress(using: configuration.algorithm, pageSize: configuration.pageSize)
+        try compressed.write(to: fileURL, options: [.atomic])
+        
+        let handler = try FileHandle(forReadingFrom: fileURL)
+        
+        let uncompress = try await handler.decompress(algorithm: configuration.algorithm, pageSize: configuration.pageSize)
+        
+        #expect(uncompress == data)
+    }
 }

@@ -6,7 +6,7 @@ import Compression
 import Foundation
 
 public extension Data {
-    func compressed(using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: (Int, Int) -> Void = { _, _ in }) async throws -> Self {
+    func compress(using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: (Int, Int) -> Void = { _, _ in }) async throws -> Self {
         assert(isEmpty == false)
 
         guard let algorithm = algorithm.algorithm else {
@@ -51,7 +51,7 @@ public extension Data {
         return compressedData
     }
 
-    func decompressed(using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws -> Self {
+    func decompress(using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws -> Self {
         assert(isEmpty == false)
 
         guard let algorithm = algorithm.algorithm else {

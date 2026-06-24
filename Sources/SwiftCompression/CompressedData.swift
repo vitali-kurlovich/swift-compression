@@ -32,7 +32,7 @@ public struct CompressedData: Hashable, Sendable {
 
         var result = payload.data()
 
-        let compressed = try await data.compressed(using: algorithm, pageSize: pageSize, progressReport: progressReport)
+        let compressed = try await data.compress(using: algorithm, pageSize: pageSize, progressReport: progressReport)
 
         assert(compressed.isEmpty == false)
 
@@ -105,8 +105,8 @@ public extension CompressedData {
 
         let compresed = _data.subdata(in: startIndex ..< endIndex)
 
-        return try await compresed.decompressed(using: algorithm,
-                                                pageSize: pageSize,
-                                                progressReport: progressReport)
+        return try await compresed.decompress(using: algorithm,
+                                              pageSize: pageSize,
+                                              progressReport: progressReport)
     }
 }

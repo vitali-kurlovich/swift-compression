@@ -81,7 +81,12 @@ struct FileHandleTest {
 
         #expect(compressed.isEmpty == data.isEmpty)
 
-        let uncompress = try await compressed.decompress(using: configuration.algorithm, pageSize: configuration.pageSize)
+        let uncompress = try await compressed.decompress(using: configuration.algorithm, pageSize: configuration.pageSize) { total, progress in
+            #expect(compressed.count == total)
+
+            #expect(progress <= total)
+        }
+
 
         #expect(uncompress == data)
     }

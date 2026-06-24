@@ -6,42 +6,11 @@ import Compression
 import Foundation
 
 public extension FileHandle {
-    func compress(using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws -> Data {
-        let fileHandle: FileHandle = self
-
-        let fileSize = try Int(fileHandle.seekToEnd())
-        try fileHandle.seek(toOffset: 0)
-
-        if fileSize == 0 {
-            return Data()
-        }
-
-        if algorithm == .none {
-            return try fileHandle.read(upToCount: fileSize)!
-        }
-
-        let compressor = Compressor()
-
-        let bufferSize = fileSize
-
-        let pageSize = pageSize == 0 ? bufferSize : pageSize
-
-        var compressedData = Data()
-
-        try await compressor.compress(read: { range in
-            try fileHandle.read(upToCount: range.count)
-        }, writingTo: { data in
-            compressedData.append(data)
-        },
-        using: algorithm,
-        pageSize: pageSize,
-        bufferSize: bufferSize,
-        progressReport: progressReport)
-
-        return compressedData
-    }
-
-    func compress(writeTo output: FileHandle, using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws {
+    func compress(writingTo writeFunc: @escaping (Data) throws -> Void,
+                  using algorithm: CompressionAlgorithm,
+                  pageSize: Int = 0,
+                  progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws
+    {
         let fileHandle: FileHandle = self
 
         let fileSize = try Int(fileHandle.seekToEnd())
@@ -59,13 +28,33 @@ public extension FileHandle {
 
         try await compressor.compress(read: { range in
             try fileHandle.read(upToCount: range.count)
-        }, writingTo: { data in
-            try output.write(contentsOf: data)
-        },
+        }, writingTo: writeFunc,
         using: algorithm,
         pageSize: pageSize,
         bufferSize: bufferSize,
         progressReport: progressReport)
+    }
+
+    func compress(writeTo output: FileHandle, using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws {
+        try await compress(writingTo: { data in
+                               try output.write(contentsOf: data)
+                           },
+                           using: algorithm,
+                           pageSize: pageSize,
+                           progressReport: progressReport)
+    }
+
+    func compress(using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws -> Data {
+        var compressedData = Data()
+
+        try await compress(writingTo: { data in
+                               compressedData.append(data)
+                           },
+                           using: algorithm,
+                           pageSize: pageSize,
+                           progressReport: progressReport)
+
+        return compressedData
     }
 }
 

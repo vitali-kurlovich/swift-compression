@@ -6,10 +6,14 @@ import Compression
 import Foundation
 
 public extension Data {
-    func compress(using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws -> Self {
-        if isEmpty || algorithm == .none {
+    func compress(writingTo writeFunc: @escaping (Data) throws -> Void,
+                  using algorithm: CompressionAlgorithm,
+                  pageSize: Int = 0,
+                  progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws
+    {
+        if isEmpty {
             progressReport(count, count)
-            return self
+            return
         }
 
         let bufferSize = count
@@ -17,18 +21,33 @@ public extension Data {
 
         let compressor = Compressor()
 
-        var compressedData = Data()
-
         try await compressor.compress(read: { range in
             self.subdata(in: range)
-        }, writingTo: { data in
-            compressedData.append(data)
-        },
+        }, writingTo: writeFunc,
         using: algorithm, pageSize: pageSize,
         bufferSize: bufferSize,
         progressReport: progressReport)
+    }
+}
+
+public extension Data {
+    func compress(using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws -> Self {
+        var compressedData = Data()
+        try await compress(writingTo: { data in
+            compressedData.append(data)
+        }, using: algorithm,
+        pageSize: pageSize,
+        progressReport: progressReport)
 
         return compressedData
+    }
+
+    func compress(writeTo output: FileHandle, using algorithm: CompressionAlgorithm, pageSize: Int = 0, progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws {
+        try await compress(writingTo: { data in
+            try output.write(contentsOf: data)
+        }, using: algorithm,
+        pageSize: pageSize,
+        progressReport: progressReport)
     }
 }
 

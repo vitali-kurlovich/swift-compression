@@ -18,8 +18,8 @@ let targets: [Target]
         ),
     ]
 #elseif os(Linux)
-    dependencies[
-        .package(url: "https://github.com/vitali-kurlovich/swift-xz", from: "0.1.0")
+    dependencies = [
+        .package(url: "https://github.com/vitali-kurlovich/swift-xz", from: "0.1.0"),
     ]
 
     targets = [

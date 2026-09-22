@@ -2,9 +2,9 @@
 //  Created by Kurlovich Vitali on 6/22/26.
 //
 
-import Foundation
+import struct Foundation.Data
 
-public struct CompressedDataPayload: Hashable, Sendable {
+public nonisolated struct CompressedDataPayload: Hashable, Sendable {
     public let originalSize: UInt32
     public let compressedSize: UInt32
     public let algorithm: CompressionAlgorithm

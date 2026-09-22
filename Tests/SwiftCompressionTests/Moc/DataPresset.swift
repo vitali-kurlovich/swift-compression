@@ -2,7 +2,7 @@
 //  Created by Kurlovich Vitali on 6/24/26.
 //
 
-import Foundation
+import struct Foundation.Data
 import SwiftCompression
 
 struct DataPresset {

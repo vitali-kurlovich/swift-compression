@@ -2,15 +2,16 @@
 //  Created by Kurlovich Vitali on 6/20/26.
 //
 
-import Compression
-import Foundation
+import enum Compression.Algorithm
 
 public enum CompressionAlgorithm: UInt8, Hashable, Codable, CaseIterable, Sendable {
     case none = 0
-    case lz4
-    case lzma
-    case zlib
-    case brotli
+    case lzma = 1
+    #if os(anyAppleOS)
+        case zlib = 2
+        case brotli = 3
+        case lz4 = 4
+    #endif
 }
 
 extension CompressionAlgorithm {

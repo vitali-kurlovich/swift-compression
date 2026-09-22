@@ -2,7 +2,7 @@
 //  Created by Kurlovich Vitali on 6/21/26.
 //
 
-import Foundation
+import struct Foundation.Data
 
 public extension CompressedData {
     struct Configuration: Hashable, Sendable {
@@ -18,7 +18,7 @@ public extension CompressedData {
     }
 }
 
-public struct CompressedData: Hashable, Sendable {
+public nonisolated struct CompressedData: Hashable, Sendable {
     let _data: Data
 
     public init(data: Data, configuration: Configuration = .init(), progressReport: @escaping (Int, Int) -> Void = { _, _ in }) async throws {

@@ -3,7 +3,7 @@
 //
 
 import Compression
-import Foundation
+import struct Foundation.Data
 
 public struct Decompressor {
     public init() {}

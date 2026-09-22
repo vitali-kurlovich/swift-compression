@@ -2,7 +2,8 @@
 //  Created by Kurlovich Vitali on 6/23/26.
 //
 
-import Foundation
+import struct Foundation.Data
+import class Foundation.FileHandle
 
 public extension FileHandle {
     func compress(writingTo writeFunc: @escaping (Data) throws -> Void,

@@ -53,21 +53,42 @@ struct CompressedDataTest {
         #expect(uncompress == data)
     }
 
-    @Test(arguments: [
-        MocMediumCompressedData.none,
-        MocMediumCompressedData.lz4,
-        MocMediumCompressedData.lzma,
-        MocMediumCompressedData.zlib,
-        MocMediumCompressedData.brotli,
-    ])
-    func fromMediumData(_ data: Data) async throws {
-        let originalData = MocData.medium
+    #if os(anyAppleOS)
+        @Test(arguments: [
+            MocMediumCompressedData.none,
+            MocMediumCompressedData.lzma,
+            MocMediumCompressedData.lz4,
+            MocMediumCompressedData.zlib,
+            MocMediumCompressedData.brotli,
 
-        let compressed = try CompressedData(from: data)
-        #expect(compressed.payload.originalSize == originalData.count)
+        ])
+        func fromMediumData(_ data: Data) async throws {
+            let originalData = MocData.medium
 
-        let uncompress = try await compressed.decompress()
+            let compressed = try CompressedData(from: data)
+            #expect(compressed.payload.originalSize == originalData.count)
 
-        #expect(uncompress == originalData)
-    }
+            let uncompress = try await compressed.decompress()
+
+            #expect(uncompress == originalData)
+        }
+    #endif
+
+    #if os(Linux)
+        @Test(arguments: [
+            MocMediumCompressedData.none,
+            MocMediumCompressedData.lzma,
+        ])
+        func fromMediumData(_ data: Data) async throws {
+            let originalData = MocData.medium
+
+            let compressed = try CompressedData(from: data)
+            #expect(compressed.payload.originalSize == originalData.count)
+
+            let uncompress = try await compressed.decompress()
+
+            #expect(uncompress == originalData)
+        }
+
+    #endif
 }

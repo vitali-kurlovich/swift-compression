@@ -3,6 +3,41 @@
 
 import PackageDescription
 
+let dependencies: [Package.Dependency]
+let targets: [Target]
+#if os(anyAppleOS)
+    dependencies = []
+    targets = [
+        .target(
+            name: "SwiftCompression"
+        ),
+
+        .testTarget(
+            name: "SwiftCompressionTests",
+            dependencies: ["SwiftCompression"]
+        ),
+    ]
+#elseif os(Linux)
+    dependencies[
+        .package(url: "https://github.com/vitali-kurlovich/swift-xz", from: "0.1.0")
+    ]
+
+    targets = [
+        .target(
+            name: "SwiftCompression",
+            dependencies: [
+                .product(name: "Lzma", package: "swift-xz"),
+            ]
+
+        ),
+
+        .testTarget(
+            name: "SwiftCompressionTests",
+            dependencies: ["SwiftCompression"]
+        ),
+    ]
+#endif
+
 let package = Package(
     name: "swift-compression",
     platforms: [
@@ -19,21 +54,7 @@ let package = Package(
         ),
 
     ],
-
-    targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
-        .target(
-            name: "SwiftCompression",
-            dependencies: [
-            ]
-
-        ),
-
-        .testTarget(
-            name: "SwiftCompressionTests",
-            dependencies: ["SwiftCompression"]
-        ),
-    ],
+    dependencies: dependencies,
+    targets: targets,
     swiftLanguageModes: [.v6]
 )

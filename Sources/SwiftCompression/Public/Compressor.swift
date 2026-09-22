@@ -2,7 +2,13 @@
 //  Created by Kurlovich Vitali on 6/24/26.
 //
 
-import Compression
+#if os(anyAppleOS)
+    import Compression
+    import Lzma
+#elseif os(Linux)
+    import Lzma
+#endif
+
 import struct Foundation.Data
 
 public struct Compressor {
@@ -18,20 +24,49 @@ public extension Compressor {
         bufferSize: Int,
         progressReport: @escaping (Int, Int) -> Void = { _, _ in }
     ) async throws {
-        if let algorithm = algorithm.algorithm {
-            try await _compress(read: readFunc,
-                                writingTo: writeFunc,
-                                algorithm: algorithm,
-                                pageSize: pageSize,
-                                bufferSize: bufferSize,
-                                progressReport: progressReport)
-        } else {
-            try await _compress(read: readFunc,
-                                writingTo: writeFunc,
-                                pageSize: pageSize,
-                                bufferSize: bufferSize,
-                                progressReport: progressReport)
-        }
+        #if os(anyAppleOS)
+
+            if let algorithm = algorithm.algorithm {
+                try await _compress(read: readFunc,
+                                    writingTo: writeFunc,
+                                    algorithm: algorithm,
+                                    pageSize: pageSize,
+                                    bufferSize: bufferSize,
+                                    progressReport: progressReport)
+
+            } else {
+                try await _compress(read: readFunc,
+                                    writingTo: writeFunc,
+                                    pageSize: pageSize,
+                                    bufferSize: bufferSize,
+                                    progressReport: progressReport)
+            }
+        #elseif os(Linux)
+            if algorithm == .lzma {
+                let encoder = LzmaEncoder(progress: { total, progress in
+                    progressReport(total, min(total, progress))
+                }) {
+                    Task.isCancelled
+                }
+
+                var position = 0
+
+                try encoder.encode(read: { length in
+                    let range = position ..< (position + length)
+                    position += length
+
+                    return try readFunc(range)
+
+                }, write: writeFunc)
+            } else {
+                assert(algorithm == .none)
+                try await _compress(read: readFunc,
+                                    writingTo: writeFunc,
+                                    pageSize: pageSize,
+                                    bufferSize: bufferSize,
+                                    progressReport: progressReport)
+            }
+        #endif
     }
 }
 

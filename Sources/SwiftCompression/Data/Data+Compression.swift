@@ -22,7 +22,19 @@ public extension Data {
         let compressor = Compressor()
 
         try await compressor.compress(read: { range in
-            self.subdata(in: range)
+            let begin = 0
+            let end = self.count
+
+            let dataRange = begin ..< end
+
+            let newRange = dataRange.clamped(to: range)
+
+            if newRange.isEmpty {
+                return nil
+            }
+
+            return self.subdata(in: newRange)
+
         }, writingTo: writeFunc,
         using: algorithm, pageSize: pageSize,
         bufferSize: bufferSize,
@@ -68,7 +80,18 @@ public extension Data {
         let decompressor = Decompressor()
 
         try await decompressor.decompress(read: { range in
-            self.subdata(in: range)
+            let begin = 0
+            let end = self.count
+
+            let dataRange = begin ..< end
+
+            let newRange = dataRange.clamped(to: range)
+
+            if newRange.isEmpty {
+                return nil
+            }
+
+            return self.subdata(in: newRange)
         }, writingTo: writeFunc,
         using: algorithm,
         pageSize: pageSize,

@@ -89,6 +89,7 @@ struct FileHandleTest {
 
         let uncompress = try await readHandler.decompress(algorithm: configuration.algorithm, pageSize: configuration.pageSize) { total, progress in
             #expect(compressed.count == total)
+
             #expect(progress <= total)
         }
 

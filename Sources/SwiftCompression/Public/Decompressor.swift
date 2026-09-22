@@ -2,7 +2,11 @@
 //  Created by Kurlovich Vitali on 6/24/26.
 //
 
-import Compression
+#if os(anyAppleOS)
+    import Compression
+#elseif os(Linux)
+    import Lzma
+#endif
 import struct Foundation.Data
 
 public struct Decompressor {
@@ -18,20 +22,50 @@ public extension Decompressor {
         bufferSize: Int,
         progressReport: @escaping (Int, Int) -> Void = { _, _ in }
     ) async throws {
-        if let algorithm = algorithm.algorithm {
-            try await _decompress(read: readFunc,
-                                  writingTo: writeFunc,
-                                  using: algorithm,
-                                  pageSize: pageSize,
-                                  bufferSize: bufferSize,
-                                  progressReport: progressReport)
-        } else {
-            try await _decompress(read: readFunc,
-                                  writingTo: writeFunc,
-                                  pageSize: pageSize,
-                                  bufferSize: bufferSize,
-                                  progressReport: progressReport)
-        }
+        #if os(anyAppleOS)
+            if let algorithm = algorithm.algorithm {
+                try await _decompress(read: readFunc,
+                                      writingTo: writeFunc,
+                                      using: algorithm,
+                                      pageSize: pageSize,
+                                      bufferSize: bufferSize,
+                                      progressReport: progressReport)
+            } else {
+                try await _decompress(read: readFunc,
+                                      writingTo: writeFunc,
+                                      pageSize: pageSize,
+                                      bufferSize: bufferSize,
+                                      progressReport: progressReport)
+            }
+
+        #elseif os(Linux)
+
+            if algorithm == .lzma {
+                let decoder = LzmaDecoder(progress: { total, progress in
+                    progressReport(total, min(total, progress))
+                }) {
+                    Task.isCancelled
+                }
+
+                var position = 0
+
+                try decoder.decode(read: { length in
+                    let range = position ..< (position + length)
+                    position += length
+
+                    return try readFunc(range)
+                }, write: writeFunc)
+            } else {
+                assert(algorithm == .none)
+
+                try await _decompress(read: readFunc,
+                                      writingTo: writeFunc,
+                                      pageSize: pageSize,
+                                      bufferSize: bufferSize,
+                                      progressReport: progressReport)
+            }
+
+        #endif
     }
 }
 

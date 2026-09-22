@@ -70,39 +70,42 @@ public extension Decompressor {
 }
 
 private extension Decompressor {
-    func _decompress(
-        read readFunc: @escaping (Range<Int>) throws -> Data?,
-        writingTo writeFunc: @escaping (Data) throws -> Void,
-        using algorithm: Algorithm,
-        pageSize: Int,
-        bufferSize: Int,
-        progressReport: @escaping (Int, Int) -> Void = { _, _ in }
-    ) async throws {
-        var index = 0
+    #if os(anyAppleOS)
+        func _decompress(
+            read readFunc: @escaping (Range<Int>) throws -> Data?,
+            writingTo writeFunc: @escaping (Data) throws -> Void,
+            using algorithm: Algorithm,
+            pageSize: Int,
+            bufferSize: Int,
+            progressReport: @escaping (Int, Int) -> Void = { _, _ in }
+        ) async throws {
+            var index = 0
 
-        let inputFilter = try InputFilter(.decompress,
-                                          using: algorithm)
-        { (length: Int) -> Data? in
-            let rangeLength = Swift.min(length, bufferSize - index)
+            let inputFilter = try InputFilter(.decompress,
+                                              using: algorithm)
+            { (length: Int) -> Data? in
+                let rangeLength = Swift.min(length, bufferSize - index)
 
-            if rangeLength == 0 {
-                return nil
+                if rangeLength == 0 {
+                    return nil
+                }
+
+                let range = index ..< index + rangeLength
+
+                let subdata = try readFunc(range)
+
+                index += rangeLength
+
+                return subdata
             }
 
-            let range = index ..< index + rangeLength
-
-            let subdata = try readFunc(range)
-
-            index += rangeLength
-
-            return subdata
+            while let page = try inputFilter.readData(ofLength: pageSize) {
+                try writeFunc(page)
+                progressReport(bufferSize, index)
+            }
         }
 
-        while let page = try inputFilter.readData(ofLength: pageSize) {
-            try writeFunc(page)
-            progressReport(bufferSize, index)
-        }
-    }
+    #endif
 
     func _decompress(
         read readFunc: @escaping (Range<Int>) throws -> Data?,

@@ -70,52 +70,56 @@ public extension Compressor {
 }
 
 private extension Compressor {
-    func _compress(
-        read readFunc: @escaping (Range<Int>) throws -> Data?,
-        writingTo writeFunc: @escaping (Data) throws -> Void,
+    #if os(anyAppleOS)
 
-        algorithm: Algorithm,
-        pageSize: Int,
-        bufferSize: Int,
-        progressReport: @escaping (Int, Int) -> Void
-    ) async throws {
-        let outputFilter = try OutputFilter(.compress,
-                                            using: algorithm)
-        {
-            (data: Data?) in
-            if let data = data {
-                try writeFunc(data)
-            }
-        }
+        func _compress(
+            read readFunc: @escaping (Range<Int>) throws -> Data?,
+            writingTo writeFunc: @escaping (Data) throws -> Void,
 
-        var index = 0
-
-        progressReport(bufferSize, index)
-
-        while true {
-            let rangeLength = Swift.min(pageSize, bufferSize - index)
-
-            if rangeLength == 0 {
-                break
+            algorithm: Algorithm,
+            pageSize: Int,
+            bufferSize: Int,
+            progressReport: @escaping (Int, Int) -> Void
+        ) async throws {
+            let outputFilter = try OutputFilter(.compress,
+                                                using: algorithm)
+            {
+                (data: Data?) in
+                if let data = data {
+                    try writeFunc(data)
+                }
             }
 
-            let range = index ..< index + rangeLength
+            var index = 0
 
-            guard let data = try readFunc(range) else {
-                assertionFailure()
-                break
+            progressReport(bufferSize, index)
+
+            while true {
+                let rangeLength = Swift.min(pageSize, bufferSize - index)
+
+                if rangeLength == 0 {
+                    break
+                }
+
+                let range = index ..< index + rangeLength
+
+                guard let data = try readFunc(range) else {
+                    assertionFailure()
+                    break
+                }
+
+                try outputFilter.write(data)
+
+                index += rangeLength
+                progressReport(bufferSize, index)
             }
 
-            try outputFilter.write(data)
+            try outputFilter.finalize()
 
-            index += rangeLength
             progressReport(bufferSize, index)
         }
 
-        try outputFilter.finalize()
-
-        progressReport(bufferSize, index)
-    }
+    #endif
 
     func _compress(
         read readFunc: @escaping (Range<Int>) throws -> Data?,

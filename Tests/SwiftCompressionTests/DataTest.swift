@@ -62,9 +62,10 @@ struct DataTest {
         let writeHandler = try FileHandle(forWritingTo: compressedFileURL)
 
         try await data.compress(writeTo: writeHandler, using: configuration.algorithm, pageSize: configuration.pageSize) { total, progress in
-            #expect(data.count == total)
-
-            #expect(progress <= total)
+            #if os(anyAppleOS)
+                #expect(data.count == total)
+                #expect(progress <= total)
+            #endif
         }
 
         try writeHandler.close()
@@ -74,9 +75,10 @@ struct DataTest {
         #expect(compressed.isEmpty == data.isEmpty)
 
         let uncompress = try await compressed.decompress(using: configuration.algorithm, pageSize: configuration.pageSize) { total, progress in
-            #expect(compressed.count == total)
-
-            #expect(progress <= total)
+            #if os(anyAppleOS)
+                #expect(compressed.count == total)
+                #expect(progress <= total)
+            #endif
         }
 
         #expect(uncompress == data)

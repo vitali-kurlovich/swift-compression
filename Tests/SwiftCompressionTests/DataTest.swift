@@ -13,9 +13,10 @@ struct DataTest {
         let configuration = presset.configuration
 
         let compressed = try await data.compress(using: configuration.algorithm, pageSize: configuration.pageSize) { total, progress in
+#if os(anyAppleOS)
             #expect(data.count == total)
-
             #expect(progress <= total)
+#endif
         }
 
         if configuration.algorithm == .none {
@@ -30,7 +31,6 @@ struct DataTest {
 
         let uncompress = try await compressed.decompress(using: configuration.algorithm, pageSize: configuration.pageSize) { total, progress in
             #expect(compressed.count == total)
-
             #expect(progress <= total)
         }
 

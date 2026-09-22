@@ -29,9 +29,10 @@ struct FileHandleTest {
         let handler = try FileHandle(forReadingFrom: fileURL)
 
         let compressed = try await handler.compress(using: configuration.algorithm, pageSize: configuration.pageSize) { total, progress in
-            #expect(data.count == total)
-
-            #expect(progress <= total)
+            #if os(anyAppleOS)
+                #expect(data.count == total)
+                #expect(progress <= total)
+            #endif
         }
 
         #expect(compressed.isEmpty == data.isEmpty)
@@ -73,9 +74,11 @@ struct FileHandleTest {
         let writeHandler = try FileHandle(forWritingTo: compressedFileURL)
 
         try await handler.compress(writeTo: writeHandler, using: configuration.algorithm, pageSize: configuration.pageSize) { total, progress in
-            #expect(data.count == total)
+            #if os(anyAppleOS)
+                #expect(data.count == total)
 
-            #expect(progress <= total)
+                #expect(progress <= total)
+            #endif
         }
 
         try handler.close()

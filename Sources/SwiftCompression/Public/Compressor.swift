@@ -4,7 +4,6 @@
 
 #if os(anyAppleOS)
     import Compression
-    import Lzma
 #elseif os(Linux)
     import Lzma
 #endif

@@ -2,7 +2,9 @@
 //  Created by Kurlovich Vitali on 6/20/26.
 //
 
-import enum Compression.Algorithm
+#if os(anyAppleOS)
+    import enum Compression.Algorithm
+#endif
 
 public enum CompressionAlgorithm: UInt8, Hashable, Codable, CaseIterable, Sendable {
     case none = 0
@@ -14,19 +16,21 @@ public enum CompressionAlgorithm: UInt8, Hashable, Codable, CaseIterable, Sendab
     #endif
 }
 
-extension CompressionAlgorithm {
-    var algorithm: Algorithm? {
-        switch self {
-        case .none:
-            return nil
-        case .lz4:
-            return .lz4
-        case .lzma:
-            return .lzma
-        case .zlib:
-            return .zlib
-        case .brotli:
-            return .brotli
+#if os(anyAppleOS)
+    extension CompressionAlgorithm {
+        var algorithm: Algorithm? {
+            switch self {
+            case .none:
+                return nil
+            case .lz4:
+                return .lz4
+            case .lzma:
+                return .lzma
+            case .zlib:
+                return .zlib
+            case .brotli:
+                return .brotli
+            }
         }
     }
-}
+#endif
